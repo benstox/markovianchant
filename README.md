@@ -1,0 +1,1 @@
+Markovian Chant employs Markov chains and Pygame.midi in order to procedurally generate pseudo-Gregorian chant in the 6th Mode. The 6th Gregorian mode contains some of the most recognisable melodies from the Gregorian repertoire, such as the "Requiem aeternam" Intoit, the Agnus Dei from the "Missa de angelis" and the "Regina caeli" Antiphon.  
