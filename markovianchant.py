@@ -7,7 +7,7 @@ import pygame.midi as midi
 ##                                                                               ##
 ##  Markovian Chant employs Markov chains and Pygame.midi in order to            ##
 ##  procedurally generate pseudo-Gregorian chant in the 6th Mode. The 6th        ##
-##  Gregorian mode contains some of the more recognisable melodies from the      ##
+##  Gregorian mode contains some of the most recognisable melodies from the      ##
 ##  Gregorian repertoire, such as the "Requiem aeternam" Intoit, the Agnus Dei   ##
 ##  from the "Missa de angelis" and the "Regina caeli" Antiphon.                 ##
 ##                                                                               ##
@@ -20,20 +20,11 @@ if os.name == 'posix':
 else:
     player = midi.Output(midi.get_default_output_id()) #device_id, latency, buffer_size
 
-#player.set_instrument(100, 1) #instrument_id=value between 0 and 127, channel
 player.set_instrument(48, 1) #instrument_id=value between 0 and 127, channel
-
-print 'default output id', midi.get_default_output_id()
-    #returns 0
-print 'device info', midi.get_device_info(0)
-    #returns ('ALSA', 'Midi Through Port-0', 0, 1, 1) = (interface, name, input?, output?, opened?)
-print 'device info', midi.get_device_info(1)
-print 'device info', midi.get_device_info(2)
-print 'device info', midi.get_device_info(3)
 
 starting_order = 4
 
-
+#encode the notes (note name : value)
 NOTES = { \
             'a': 58, \
             'b': 60, \
@@ -51,7 +42,7 @@ NOTES = { \
             'm': 78, \
         }
 
-# Mode VI melodies
+# A collection of Mode VI melodies
 # introit_requiem is for example the introit 'Requiem aeternam'
 # ! = ixi
 VI = { \
@@ -114,18 +105,7 @@ def generate(order, strings_to_load, start = None, max_length = 20):
         pass
     return s
 
-# while starting_order >=0:
-#     print 'Order', starting_order
-#     print 'Output:'
-#     #for i in range(5):
-#     #    print generate(start='f_fg', max_length=100)
-#     print generate(starting_order, ''.join(VI.values()), start='f_fg', max_length=80)
-#     print ''
-#     starting_order -= 1
-
-print '##############################'
-
-#take the output of the markov generator and makes a list of note-length tuples
+#take the output of the markov generator and makes a list of note-and-length tuples
 def create_midi_list(markov):
     score = []
     for i in range(len(markov)):
@@ -141,7 +121,7 @@ def create_midi_list(markov):
                 if random.randrange(3) == 2: #there should be a chance of adding an extra long one
                     score[-1] = ( NOTES[markov[i-2]], round(1.6 * (1 + noise), 3) ) #both of the notes are made longer actually
                     score.append(( NOTES[markov[i]], round(2.0 * (1 + noise), 3) )) 
-                    print 'LONG ONE!', markov[i-2] + markov[i-1] + markov[i] + markov[i+1] + markov[i+2] + markov[i+3]
+                    #print 'LONG ONE!', markov[i-2] + markov[i-1] + markov[i] + markov[i+1] + markov[i+2] + markov[i+3]
                 else:
                     score.append(( NOTES[markov[i]], round(1.5 * (1 + noise), 3) )) 
                 score.append(( None, round(0.4 + get_noise(0.09), 3) )) #in either case add a delay for all 'g.f.'-likes
@@ -157,22 +137,27 @@ def create_midi_list(markov):
             score.append(( NOTES[markov[i]], round(0.5 + noise, 3) ))
     return score
 
+#CREATE THE SCORE
 markov = generate(order=4, strings_to_load=''.join(VI.values()), max_length=400)
 print markov
 score = create_midi_list(markov)
 
-
+#PLAY THE MUSIC
 player.note_on(54, 50, 1) #drone
 player.note_on(61-12, 50, 1) #drone
 speed = 0.8 #a multiplier: smaller means faster
 for i in range(len(score)):
+    #PLAY A NOTE
     if score[i][0]:
         player.note_on(score[i][0], 127, 1) #melody
         time.sleep(score[i][1]*speed)
         player.note_off(score[i][0], 127, 1)
     else:
+    #REST
         time.sleep(score[i][1]*speed)
-        print 'REST!'
+        #print 'REST!'
+
+#END THE MUSIC
 player.note_off(54, 50, 1) #drone
 player.note_off(61, 50, 1) #drone
 midi.quit()
